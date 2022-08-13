@@ -90,6 +90,22 @@ namespace IncidentAPI.Controllers
                 
                 _context.Contact.Add(contact);
 
+                if (!_context.Account.Any(u => u.Name == dto.AccountName))
+                {
+                    Account account = new Account { Name = dto.AccountName , Contact = contact};
+
+                    _context.Account.Add(account);
+
+
+                    Incident incident = new Incident { Account = account, Description = dto.Description };
+
+                    _context.Incident.Add(incident);
+                }
+                else
+                {
+
+                }
+
             }
             else
             {
