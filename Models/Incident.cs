@@ -8,7 +8,6 @@ namespace IncidentAPI.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public string IncidentName { get; set; }
-
         [Required]
         [StringLength(100)]
         public string Description { get; set; }

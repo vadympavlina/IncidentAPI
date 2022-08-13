@@ -83,31 +83,58 @@ namespace IncidentAPI.Controllers
             {
                 return Problem("Entity set 'IncidentAPIContext.Incident'is null.");
             }
-
-            if (!_context.Contact.Any(u => u.Email == dto.Email))
+            if (!_context.Account.Any(u => u.Name == dto.AccountName))
             {
-                Contact contact = new Contact { FirstName = dto.FirstName, LastName = dto.LastName, Email = dto.Email };
-                
-                _context.Contact.Add(contact);
+                Account account = null;
+                if (!_context.Contact.Any(u => u.Email == dto.Email))
+                {
+                    Contact contact = new Contact { FirstName = dto.FirstName, LastName = dto.LastName, Email = dto.Email };
 
+                    _context.Contact.Add(contact);
+
+                    account = new Account { Name = dto.AccountName, Contact = contact };
+
+                    _context.Account.Add(account);
+                }
+                else
+                {
+                    #region Contact if exist email
+                    var Contacts = _context.Contact;
+                    Contact cont = _context.Contact.First(u => u.Email == dto.Email);
+                    var contact = new Contact
+                    {
+                        FirstName = dto.FirstName,
+                        LastName = dto.LastName,
+                        Email = dto.Email,
+                        Id = cont.Id
+                    };
+                    _context.ChangeTracker.Clear();
+                    var c = Contacts.Attach(contact);
+
+                    c.State = EntityState.Modified;
+
+                    account = new Account { Name = dto.AccountName, Contact = contact };
+
+                    _context.Account.Add(account);
+                    #endregion
+                }
+
+                #region Create Incident link account
+                Incident incident = new Incident { Account = account, Description = dto.Description };
+
+                _context.Incident.Add(incident);
+                #endregion
             }
             else
             {
-            #region Contact if exist email
-                var Contacts = _context.Contact;
-                Contact cont = _context.Contact.First(u => u.Email == dto.Email);
-                var contact = new Contact
-                {
-                    FirstName = dto.FirstName,
-                    LastName = dto.LastName,
-                    Email = dto.Email,
-                    Id = cont.Id
-                };
-                _context.ChangeTracker.Clear();
-                var c = Contacts.Attach(contact);
+                //Get exist Account
+                Account account = _context.Account.First(u => u.Name == dto.AccountName);
+                //Create new Incident
+                Incident incident = new Incident { Account = account, Description = dto.Description };
 
-                c.State = EntityState.Modified;
-            #endregion
+                _context.Incident.Add(incident);
+
+
             }
 
             try
