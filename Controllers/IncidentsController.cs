@@ -18,14 +18,23 @@ namespace IncidentAPI.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Incident>>> GetIncident()
+        public async Task<ActionResult<IEnumerable<DTO>>> GetIncident()
         {
             if (_context.Incident == null)
             {
                 return NotFound();
             }
+            var Incidents = _context.Incident;
 
-            return await _context.Incident.Include(i => i.Account).ThenInclude(a => a.Contact).ToListAsync();
+            return await Incidents.AsNoTracking().Include(a => a.Account).ThenInclude(c => c.Contact).OrderBy(n => n.IncidentName).Select(d => new DTO
+            {
+                AccountName = d.Account.Name,
+                Description = d.Description,
+                Email = d.Account.Contact.Email,
+                FirstName = d.Account.Contact.FirstName,
+                LastName = d.Account.Contact.LastName,
+            }).ToListAsync();
+            //return await _context.Incident.Include(i => i.Account).ThenInclude(a => a.Contact).ToListAsync();
 
         }
 
