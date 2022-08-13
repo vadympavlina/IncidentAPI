@@ -18,6 +18,7 @@ namespace IncidentAPI.Controllers
 
 
         [HttpGet]
+        [Tags("Search")]
         public async Task<ActionResult<IEnumerable<DTO>>> GetIncident()
         {
             if (_context.Incident == null)
@@ -39,53 +40,24 @@ namespace IncidentAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Incident>> GetIncident(string id)
+        [Tags("Search")]
+
+        public async Task<ActionResult<IEnumerable<DTO>>> GetIncident(string id)
         {
-            if (_context.Incident == null)
+            
+            var Incidents = _context.Incident;
+            return await Incidents.AsNoTracking().Include(a => a.Account).ThenInclude(c => c.Contact).Where(x=> x.Account.Name == id).Select(d => new DTO
             {
-                return NotFound();
-            }
-            var incident = await _context.Incident.FindAsync(id);
+                AccountName = d.Account.Name,
+                Description = d.Description,
+                Email = d.Account.Contact.Email,
+                FirstName = d.Account.Contact.FirstName,
+                LastName = d.Account.Contact.LastName,
+            }).ToListAsync();
 
-            if (incident == null)
-            {
-                return NotFound();
-            }
-
-            return incident;
         }
-
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutIncident(string id, Incident incident)
-        {
-            if (id != incident.IncidentName)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(incident).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ContactExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
         [HttpPost]
+        [Tags("Create")]
         public async Task<ActionResult<DTO>> PostIncident(DTO dto)
         {
             if (_context.Incident == null)
@@ -163,26 +135,6 @@ namespace IncidentAPI.Controllers
             }
 
             return CreatedAtAction("GetIncident", new { id = dto.AccountName }, dto);
-        }
-
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteIncident(string id)
-        {
-            if (_context.Incident == null)
-            {
-                return NotFound();
-            }
-            var incident = await _context.Incident.FindAsync(id);
-            if (incident == null)
-            {
-                return NotFound();
-            }
-
-            _context.Incident.Remove(incident);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
         }
 
         private bool ContactExists(string email)
