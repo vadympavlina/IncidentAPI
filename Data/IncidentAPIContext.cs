@@ -13,7 +13,10 @@ namespace IncidentAPI.Data
             : base(options)
         {
         }
-
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Incident>().Property(x => x.IncidentName).ValueGeneratedOnAdd();
+        }
         public DbSet<IncidentAPI.Models.Incident> Incident { get; set; } = default!;
         public DbSet<IncidentAPI.Models.Account> Account { get; set; } = default!;
         public DbSet<IncidentAPI.Models.Contact> Contact { get; set; } = default!;

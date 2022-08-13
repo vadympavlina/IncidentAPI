@@ -6,6 +6,7 @@ namespace IncidentAPI.Models
     public class Incident
     {
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public string IncidentName { get; set; }
 
         [Required]
