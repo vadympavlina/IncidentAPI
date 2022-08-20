@@ -55,8 +55,6 @@ namespace IncidentAPI.Controllers
             {
                 return NotFound();
             }
-                
-
         }
         [HttpPost]
         [Tags("Testing")]
@@ -64,24 +62,22 @@ namespace IncidentAPI.Controllers
         {
             if (_context.Incident == null)
             {
-                return Problem("Entity set 'IncidentAPIContext.Incident'is null.");
+                return Problem("Incident is empty.");
             }
             if (!AccountExists(dto.AccountName))
             {
                 if (!ContactExists(dto.Email))
                 {
-                    Contact contact = new Contact { Email = dto.Email, FirstName = dto.FirstName, LastName = dto.LastName };
-                    _context.Contact.Add(contact);
+                    CreateContact(dto);
 
-                    CreateAccount(contact, dto);
+                    CreateAccount(dto);
 
                 }
                 else
                 {
-                    var contact = _context.Contact.FirstOrDefault(e => e.Email == dto.Email);
-                    UpdateContact(contact, dto);
+                    UpdateContact(dto);
 
-                    CreateAccount(contact, dto);
+                    CreateAccount(dto);
                 }
             }
             else
@@ -89,18 +85,16 @@ namespace IncidentAPI.Controllers
 
                 if (!ContactExists(dto.Email))
                 {
-                    Contact contact = new Contact { Email = dto.Email, FirstName = dto.FirstName, LastName = dto.LastName };
-                    _context.Contact.Add(contact);
+                    CreateContact(dto);
 
-                    UpdateAccount(contact, dto);
+                    UpdateAccount(dto);
 
                 }
                 else
                 {
-                    var contact = _context.Contact.FirstOrDefault(e => e.Email == dto.Email);
-                    UpdateContact(contact, dto);
+                    UpdateContact(dto);
 
-                    UpdateAccount(contact, dto);
+                    UpdateAccount(dto);
                 }
 
             }
@@ -126,25 +120,35 @@ namespace IncidentAPI.Controllers
             return (_context.Account?.Any(e => e.Name == name)).GetValueOrDefault();
         }
 
-        private void UpdateContact(Contact contact, DTO dto)
+        private void UpdateContact(DTO dto)
         {
+            var contact = _context.Contact.FirstOrDefault(e => e.Email == dto.Email);
             contact.FirstName = dto.FirstName;
             contact.LastName = dto.LastName;
             _context.Update(contact);
             _context.SaveChanges();
         }
-        private void UpdateAccount(Contact contact, DTO dto)
+        private void UpdateAccount(DTO dto)
         {
             var account = _context.Account.FirstOrDefault(e => e.Name == dto.AccountName);
+            var contact = _context.Contact.FirstOrDefault(e => e.Email == dto.Email);
 
             account.Contact = contact;
             _context.Update(account);
             _context.SaveChanges();
         }
-        private void CreateAccount(Contact contact, DTO dto)
+        private void CreateAccount(DTO dto)
         {
+            var contact = _context.Contact.FirstOrDefault(e => e.Email == dto.Email);
+
             Account account = new Account { Name = dto.AccountName, Contact = contact };
             _context.Account.Add(account);
+            _context.SaveChanges();
+        }
+        private void CreateContact(DTO dto)
+        {
+            Contact contact = new Contact { Email = dto.Email, FirstName = dto.FirstName, LastName = dto.LastName };
+            _context.Contact.Add(contact);
             _context.SaveChanges();
         }
         private void CreateIncident(DTO dto)
@@ -154,8 +158,8 @@ namespace IncidentAPI.Controllers
             _context.Incident.Add(incident);
             _context.SaveChanges();
         }
-        
 
-        
+
+
     }
 }
