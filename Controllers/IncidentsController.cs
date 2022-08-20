@@ -64,7 +64,7 @@ namespace IncidentAPI.Controllers
         {
             if (_context.Incident == null)
             {
-                return Problem("Entity set 'IncidentAPIContext.Incident'is null.");
+                return Problem("Incident is empty.");
             }
             if (!AccountExists(dto.AccountName))
             {
