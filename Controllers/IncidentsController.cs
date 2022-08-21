@@ -39,7 +39,8 @@ namespace IncidentAPI.Controllers
         [Tags("Search")]
         public async Task<ActionResult<IEnumerable<DTO>>> GetIncident(string Name)
         {
-            if (AccountExists(Name))
+            var accountExists = await AccountExistsAsync(Name);
+            if (accountExists)
             {
                 var Incidents = _context.Incident;
                 return await Incidents.Include(a => a.Account).ThenInclude(c => c.Contact).Where(x => x.Account.Name == Name).Select(d => new DTO
@@ -64,41 +65,15 @@ namespace IncidentAPI.Controllers
             {
                 return Problem("Incident is empty.");
             }
-            if (!AccountExists(dto.AccountName))
-            {
-                if (!ContactExists(dto.Email))
-                {
-                    CreateContact(dto);
+            var accountExists = await AccountExistsAsync(dto.AccountName);
+            var contactExists = await ContactExistsAsync(dto.Email);
 
-                    CreateAccount(dto);
+            await (contactExists ? UpdateContactAsync(dto) : CreateContactAsync(dto));
 
-                }
-                else
-                {
-                    UpdateContact(dto);
+            await (accountExists ? UpdateAccountAsync(dto) : CreateAccountAsync(dto));
 
-                    CreateAccount(dto);
-                }
-            }
-            else
-            {
+            await CreateIncidentAsync(dto);
 
-                if (!ContactExists(dto.Email))
-                {
-                    CreateContact(dto);
-
-                    UpdateAccount(dto);
-
-                }
-                else
-                {
-                    UpdateContact(dto);
-
-                    UpdateAccount(dto);
-                }
-
-            }
-            CreateIncident(dto);
             try
             {
                 await _context.SaveChangesAsync();
@@ -107,59 +82,46 @@ namespace IncidentAPI.Controllers
             {
                 return Problem("Error Update DataBase");
             }
-
             return CreatedAtAction("GetIncident", new { id = dto.AccountName }, dto);
-
         }
-        private bool ContactExists(string email)
+        private async Task<bool> ContactExistsAsync(string email) => await _context.Contact.AnyAsync(e => e.Email == email);
+        private async Task<bool> AccountExistsAsync(string name) => await _context.Account.AnyAsync(e => e.Name == name);
+        private async Task UpdateContactAsync(DTO dto)
         {
-            return (_context.Contact?.Any(e => e.Email == email)).GetValueOrDefault();
-        }
-        private bool AccountExists(string name)
-        {
-            return (_context.Account?.Any(e => e.Name == name)).GetValueOrDefault();
-        }
-
-        private void UpdateContact(DTO dto)
-        {
-            var contact = _context.Contact.FirstOrDefault(e => e.Email == dto.Email);
+            var contact = await _context.Contact.FirstOrDefaultAsync(e => e.Email == dto.Email);
             contact.FirstName = dto.FirstName;
             contact.LastName = dto.LastName;
-            _context.Update(contact);
-            _context.SaveChanges();
-        }
-        private void UpdateAccount(DTO dto)
-        {
-            var account = _context.Account.FirstOrDefault(e => e.Name == dto.AccountName);
-            var contact = _context.Contact.FirstOrDefault(e => e.Email == dto.Email);
 
-            account.Contact = contact;
-            _context.Update(account);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
-        private void CreateAccount(DTO dto)
+        private async Task UpdateAccountAsync(DTO dto)
         {
-            var contact = _context.Contact.FirstOrDefault(e => e.Email == dto.Email);
+            var account = await _context.Account.FirstOrDefaultAsync(e => e.Name == dto.AccountName);
+            account.Contact = await _context.Contact.FirstOrDefaultAsync(e => e.Email == dto.Email);
 
-            Account account = new Account { Name = dto.AccountName, Contact = contact };
-            _context.Account.Add(account);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
-        private void CreateContact(DTO dto)
+        private async Task CreateAccountAsync(DTO dto)
         {
-            Contact contact = new Contact { Email = dto.Email, FirstName = dto.FirstName, LastName = dto.LastName };
+            var contact = await _context.Contact.FirstOrDefaultAsync(e => e.Email == dto.Email);
+            _context.Account.Add(new Account { Name = dto.AccountName, Contact = contact });
+
+            await _context.SaveChangesAsync();
+        }
+        private async Task CreateContactAsync(DTO dto)
+        {
+            var contact = new Contact { Email = dto.Email, FirstName = dto.FirstName, LastName = dto.LastName };
             _context.Contact.Add(contact);
-            _context.SaveChanges();
+
+            await _context.SaveChangesAsync();
         }
-        private void CreateIncident(DTO dto)
+        private async Task CreateIncidentAsync(DTO dto)
         {
-            var account = _context.Account.FirstOrDefault(e => e.Name == dto.AccountName);
-            Incident incident = new Incident { Description = dto.Description, Account = account };
+            var account = await _context.Account.FirstOrDefaultAsync(e => e.Name == dto.AccountName);
+            var incident = new Incident { Description = dto.Description, Account = account };
             _context.Incident.Add(incident);
-            _context.SaveChanges();
+
+            await _context.SaveChangesAsync();
         }
-
-
-
     }
 }
