@@ -17,8 +17,8 @@ namespace IncidentAPI.Data
         {
             modelBuilder.Entity<Incident>().Property(x => x.IncidentName).ValueGeneratedOnAdd();
         }
-        public DbSet<IncidentAPI.Models.Incident> Incident { get; set; } = default!;
-        public DbSet<IncidentAPI.Models.Account> Account { get; set; } = default!;
-        public DbSet<IncidentAPI.Models.Contact> Contact { get; set; } = default!;
+        public DbSet<Incident> Incident { get; set; } = null!;
+        public DbSet<Account> Account { get; set; } = null!;
+        public DbSet<Contact> Contact { get; set; } = null!;
     }
 }
