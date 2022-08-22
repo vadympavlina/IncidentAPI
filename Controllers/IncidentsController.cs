@@ -25,7 +25,7 @@ namespace IncidentAPI.Controllers
             }
             var Incidents = _context.Incident;
 
-            return await Incidents.AsNoTracking().Include(a => a.Account).ThenInclude(c => c.Contact).OrderBy(n => n.IncidentName).Select(d => new DTO
+            return await Incidents.AsNoTracking().Include(a => a.Account).ThenInclude(c => c.Contact).OrderBy(n => n.Account.Name).Select(d => new DTO
             {
                 AccountName = d.Account.Name,
                 Description = d.Description,
